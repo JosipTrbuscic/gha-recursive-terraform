@@ -1,13 +1,13 @@
-name: 'Hello World'
-description: 'Greet someone and record the time'
+name: 'Terraform recursive plan'
+description: 'Perform recursive terraform plan and report results'
 inputs:
-  who-to-greet:  # id of input
-    description: 'Who to greet'
+  start_dir:
+    description: 'Script root dir'
     required: true
-    default: 'World'
-outputs:
-  time: # id of output
-    description: 'The time we greeted you'
+    default: '.'
+  environment:
+    description: 'Infra environemnt'
+    required: true
 runs:
   using: 'node16'
   main: 'dist/index.js'
