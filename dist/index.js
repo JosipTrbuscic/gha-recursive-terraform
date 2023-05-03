@@ -11369,6 +11369,8 @@ async function recursivePlan(root_dir) {
         }
         catch (e) {
             payload.error = true;
+            data.push(payload);
+            return;
         }
         core.info(`Terraform init done for ${root}`);
         try {

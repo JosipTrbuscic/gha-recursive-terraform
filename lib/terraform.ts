@@ -34,6 +34,8 @@ export async function recursivePlan(root_dir: string): Promise<TerraformPlanInfo
             await terraformInit(root)
         } catch (e) {
             payload.error = true
+            data.push(payload)
+            return
         }
         core.info(`Terraform init done for ${root}`)
 
