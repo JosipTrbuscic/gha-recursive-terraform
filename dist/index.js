@@ -11359,18 +11359,18 @@ async function recursivePlan(root_dir) {
             return;
         }
         core.info(`In: ${root}`);
-        try {
-            await terraformInit(root);
-        }
-        catch (e) {
-            core.error(`Terraform init failed with ${e.message}`);
-        }
-        core.info(`Terraform init done for ${root}`);
         var payload = {
             dir_name: root.substring(root_dir.length),
             error: false,
             change: false,
         };
+        try {
+            await terraformInit(root);
+        }
+        catch (e) {
+            payload.error = true;
+        }
+        core.info(`Terraform init done for ${root}`);
         try {
             await terraformPlan(root);
             core.info(`Terraform plan done for ${root}`);
@@ -11398,9 +11398,7 @@ async function terraformInit(dir_path) {
         core.info(stdout);
     }
     catch (error) {
-        core.error("Caught");
         core.error(error.stdout);
-        core.error("Caught2");
         core.error(error.stderr);
         throw error;
     }
@@ -11410,7 +11408,8 @@ async function terraformPlan(dir_path) {
         const { stdout, stderr } = await exec(`terraform -chdir=${dir_path} plan -no-color -detailed-exitcode`);
     }
     catch (error) {
-        core.info(error);
+        core.error(error.stdout);
+        core.error(error.stderr);
         throw error;
     }
 }
