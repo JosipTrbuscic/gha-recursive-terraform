@@ -52,6 +52,13 @@ export async function recursivePlan(root_dir: string): Promise<TerraformPlanInfo
             }
         }
 
+        try {
+            await terraformCleanup(root)
+        } catch (error) {
+            core.error("Unable to cleanup .terraform")
+            throw error
+        }
+
         data.push(payload)
     };
 
@@ -90,4 +97,14 @@ export async function checkTerraformExists() {
         return false
     }
     return true
+}
+
+export async function terraformCleanup(dir_path: string) {
+    try {
+        const { stdout, stderr } = await exec(`cd ${dir_path} && rm -r .terraform`)
+    } catch (error) {
+        core.error(error.stdout)
+        core.error(error.stderr)
+        throw error
+    }
 }

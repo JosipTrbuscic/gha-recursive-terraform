@@ -11252,7 +11252,7 @@ for (const name of env_vars) {
 }
 try {
     _actions_core__WEBPACK_IMPORTED_MODULE_0__.info("Checking if terraform command exists");
-    const terraformExists = await (0,_lib_terraform__WEBPACK_IMPORTED_MODULE_1__/* .checkTerraformExists */ .A)();
+    const terraformExists = await (0,_lib_terraform__WEBPACK_IMPORTED_MODULE_1__/* .checkTerraformExists */ .Au)();
     if (terraformExists) {
         _actions_core__WEBPACK_IMPORTED_MODULE_0__.info("Terraform command found");
     }
@@ -11260,7 +11260,7 @@ try {
         throw Error("Terraform command NOT found");
     }
     console.log("Running recursive plan");
-    const data = await (0,_lib_terraform__WEBPACK_IMPORTED_MODULE_1__/* .recursivePlan */ .Y)(process.env.INPUT_START_DIR);
+    const data = await (0,_lib_terraform__WEBPACK_IMPORTED_MODULE_1__/* .recursivePlan */ .Yz)(process.env.INPUT_START_DIR);
     await (0,_lib_report__WEBPACK_IMPORTED_MODULE_2__/* .generateReport */ .O)(data);
 }
 catch (error) {
@@ -11323,9 +11323,11 @@ async function generateReport(data) {
 
 // EXPORTS
 __nccwpck_require__.d(__webpack_exports__, {
-  "A": () => (/* binding */ checkTerraformExists),
-  "Y": () => (/* binding */ recursivePlan)
+  "Au": () => (/* binding */ checkTerraformExists),
+  "Yz": () => (/* binding */ recursivePlan)
 });
+
+// UNUSED EXPORTS: terraformCleanup
 
 // EXTERNAL MODULE: external "util"
 var external_util_ = __nccwpck_require__(3837);
@@ -11387,6 +11389,13 @@ async function recursivePlan(root_dir) {
                 payload.change = true;
             }
         }
+        try {
+            await terraformCleanup(root);
+        }
+        catch (error) {
+            core.error("Unable to cleanup .terraform");
+            throw error;
+        }
         data.push(payload);
     };
     const w = walk.create({ sort: filterDirs });
@@ -11423,6 +11432,16 @@ async function checkTerraformExists() {
         return false;
     }
     return true;
+}
+async function terraformCleanup(dir_path) {
+    try {
+        const { stdout, stderr } = await exec(`cd ${dir_path} && rm -r .terraform`);
+    }
+    catch (error) {
+        core.error(error.stdout);
+        core.error(error.stderr);
+        throw error;
+    }
 }
 
 
