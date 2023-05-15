@@ -46,6 +46,7 @@ export async function recursivePlan(root_dir: string): Promise<TerraformPlanInfo
             core.info(`Terraform plan done for ${root}`)
             payload.command_output = out.split(/(\n|%0A)/).filter((v) => v.length > 0 && v !== "\n" && v !== "%0A")
         } catch (error) {
+            console.log(`Error code: ${error.code}`)
             if (error.code === 1) {
                 core.info(`Plan errored for ${root}`)
                 payload.error = true
