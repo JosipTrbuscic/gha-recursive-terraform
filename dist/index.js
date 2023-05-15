@@ -11424,8 +11424,9 @@ async function terraformInit(dir_path) {
 }
 function terraformPlan(dir_path) {
     try {
-        const stdout = (0,external_child_process_namespaceObject.execSync)(`terraform -chdir=${dir_path} plan -no-color -detailed-exitcode`).toString();
-        core.info(stdout);
+        const stdout = (0,external_child_process_namespaceObject.execSync)(`terraform -chdir=${dir_path} plan -no-color -detailed-exitcode`, {
+            stdio: ['inherit', 'inherit', 'inherit']
+        }).toString();
         return stdout;
     }
     catch (error) {

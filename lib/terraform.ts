@@ -89,8 +89,9 @@ async function terraformInit(dir_path: string) {
 
 function terraformPlan(dir_path: string): string {
     try {
-        const stdout = execSync(`terraform -chdir=${dir_path} plan -no-color -detailed-exitcode`).toString()
-        core.info(stdout);
+        const stdout = execSync(`terraform -chdir=${dir_path} plan -no-color -detailed-exitcode`, {
+            stdio: ['inherit', 'inherit', 'inherit']
+        }).toString()
         return stdout
     } catch (error) {
         core.error(error.stdout)
