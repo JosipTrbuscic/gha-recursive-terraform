@@ -11434,6 +11434,7 @@ class CommandError extends Error {
     }
 }
 function terraformPlan(dir_path) {
+    core.info("Starting plan");
     const cmd = (0,external_child_process_namespaceObject.spawnSync)(`terraform`, [`-chdir=${dir_path}`, "plan", "-no-color", "-detailed-exitcode"]);
     core.info(cmd.status.toString());
     core.info(cmd.stdout.toString());

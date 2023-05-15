@@ -94,6 +94,7 @@ class CommandError extends Error {
 }
 
 function terraformPlan(dir_path: string): string {
+    core.info("Starting plan")
     const cmd = spawnSync(`terraform`, [`-chdir=${dir_path}`, "plan", "-no-color", "-detailed-exitcode"]);
     core.info(cmd.status.toString())
     core.info(cmd.stdout.toString())
