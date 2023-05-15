@@ -11379,7 +11379,7 @@ async function recursivePlan(root_dir) {
         try {
             const out = await terraformPlan(root);
             core.info(`Terraform plan done for ${root}`);
-            payload.command_output = out;
+            payload.command_output = out.replaceAll("\n", "<br>");
         }
         catch (error) {
             if (error.code === 1) {
@@ -11390,7 +11390,7 @@ async function recursivePlan(root_dir) {
                 core.info(`Plan changed for ${root}`);
                 payload.change = true;
             }
-            payload.command_output = `Stdout: ${error.stdout}\nStderr: ${error.stderr}\n`;
+            payload.command_output = `Stdout: ${error.stdout}\nStderr: ${error.stderr}\n`.replaceAll("\n", "<br>");
         }
         try {
             await terraformCleanup(root);
