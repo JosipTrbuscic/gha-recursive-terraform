@@ -61,7 +61,9 @@
         <li class="{{planResult this}}">
             <details>
                 <summary>{{dir_name}}</summary>
-                <p>{{command_output}}</p>
+                {{#each command_output}}
+                <p>{{this}}</p>
+                {{/each}}
             </details>
         </li>
         {{/each}}
