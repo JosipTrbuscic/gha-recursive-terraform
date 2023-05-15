@@ -89,6 +89,8 @@ async function terraformInit(dir_path: string) {
 async function terraformPlan(dir_path: string): Promise<string> {
     try {
         const { stdout, stderr } = await exec(`terraform -chdir=${dir_path} plan -no-color -detailed-exitcode`)
+        core.info(stdout);
+        core.info(stderr);
         return stdout
     } catch (error) {
         core.error(error.stdout)

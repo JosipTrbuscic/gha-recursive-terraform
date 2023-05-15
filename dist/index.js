@@ -11424,6 +11424,8 @@ async function terraformInit(dir_path) {
 async function terraformPlan(dir_path) {
     try {
         const { stdout, stderr } = await exec(`terraform -chdir=${dir_path} plan -no-color -detailed-exitcode`);
+        core.info(stdout);
+        core.info(stderr);
         return stdout;
     }
     catch (error) {
