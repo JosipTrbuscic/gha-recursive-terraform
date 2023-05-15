@@ -13,11 +13,14 @@ Handlebars.registerHelper("planResult", function (directory, options): string {
     }
 });
 
+Handlebars.registerHelper("concatStdout", function (stdout: string[], options): string {
+    return stdout.join("\n")
+});
+
 export async function generateReport(data: TerraformPlanInfo[]) {
     const templateFile = await readFile(join(__dirname, "./index.hbs"), { encoding: "utf-8" });
     const template = Handlebars.compile(templateFile);
     const env = process.env.INPUT_ENVIRONMENT
-    console.log
     const res = template({ environment: env, moduleInfo: data });
 
 

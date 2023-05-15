@@ -11303,11 +11303,13 @@ lib.registerHelper("planResult", function (directory, options) {
         return "nochange";
     }
 });
+lib.registerHelper("concatStdout", function (stdout, options) {
+    return stdout.join("\n");
+});
 async function generateReport(data) {
     const templateFile = await (0,promises_namespaceObject.readFile)(__nccwpck_require__.ab + "index.hbs", { encoding: "utf-8" });
     const template = lib.compile(templateFile);
     const env = process.env.INPUT_ENVIRONMENT;
-    console.log;
     const res = template({ environment: env, moduleInfo: data });
     console.log("Writing terraform_plan_index.html");
     await (0,promises_namespaceObject.writeFile)("terraform_plan_index.html", res, { encoding: "utf-8", flag: 'w' });
@@ -11362,7 +11364,7 @@ async function recursivePlan(root_dir) {
         }
         core.info(`In: ${root}`);
         var payload = {
-            dir_name: root.substring(root_dir.length),
+            dir_name: root.substring(root_dir.length).length > 0 ? root.substring(root_dir.length) : external_path_.basename(root_dir),
             error: false,
             change: false,
             command_output: [],
@@ -11392,6 +11394,7 @@ async function recursivePlan(root_dir) {
             }
             payload.command_output = `Stdout: ${error.stdout}\nStderr: ${error.stderr}\n`.split(/(\n|%0A)/).filter((v) => v.length > 0 && v !== "\n" && v !== "%0A");
         }
+        console.log(payload);
         try {
             await terraformCleanup(root);
         }

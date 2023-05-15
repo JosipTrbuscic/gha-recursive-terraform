@@ -27,7 +27,7 @@ export async function recursivePlan(root_dir: string): Promise<TerraformPlanInfo
         }
         core.info(`In: ${root}`)
         var payload: TerraformPlanInfo = {
-            dir_name: root.substring(root_dir.length),
+            dir_name: root.substring(root_dir.length).length > 0 ? root.substring(root_dir.length) : path.basename(root_dir),
             error: false,
             change: false,
             command_output: [],
@@ -55,6 +55,7 @@ export async function recursivePlan(root_dir: string): Promise<TerraformPlanInfo
             }
             payload.command_output = `Stdout: ${error.stdout}\nStderr: ${error.stderr}\n`.split(/(\n|%0A)/).filter((v) => v.length > 0 && v !== "\n" && v !== "%0A")
         }
+        console.log(payload);
 
         try {
             await terraformCleanup(root)
