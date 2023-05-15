@@ -10,6 +10,7 @@ export interface TerraformPlanInfo {
     dir_name: string
     error: boolean
     change: boolean
+    command_output: string
 }
 
 export async function recursivePlan(root_dir: string): Promise<TerraformPlanInfo[]> {
@@ -29,6 +30,7 @@ export async function recursivePlan(root_dir: string): Promise<TerraformPlanInfo
             dir_name: root.substring(root_dir.length),
             error: false,
             change: false,
+            command_output: "",
         }
         try {
             await terraformInit(root)
@@ -40,8 +42,9 @@ export async function recursivePlan(root_dir: string): Promise<TerraformPlanInfo
         core.info(`Terraform init done for ${root}`)
 
         try {
-            await terraformPlan(root)
+            const out = await terraformPlan(root)
             core.info(`Terraform plan done for ${root}`)
+            payload.command_output = out
         } catch (error) {
             if (error.code === 1) {
                 core.info(`Plan errored for ${root}`)
@@ -50,6 +53,7 @@ export async function recursivePlan(root_dir: string): Promise<TerraformPlanInfo
                 core.info(`Plan changed for ${root}`)
                 payload.change = true
             }
+            payload.command_output = `Stdout: ${error.stdout}\nStderr: ${error.stderr}\n`
         }
 
         try {
@@ -80,9 +84,10 @@ async function terraformInit(dir_path: string) {
     }
 }
 
-async function terraformPlan(dir_path: string) {
+async function terraformPlan(dir_path: string): Promise<string> {
     try {
         const { stdout, stderr } = await exec(`terraform -chdir=${dir_path} plan -no-color -detailed-exitcode`)
+        return stdout
     } catch (error) {
         core.error(error.stdout)
         core.error(error.stderr)

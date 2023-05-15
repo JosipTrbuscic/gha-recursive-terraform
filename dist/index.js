@@ -11365,6 +11365,7 @@ async function recursivePlan(root_dir) {
             dir_name: root.substring(root_dir.length),
             error: false,
             change: false,
+            command_output: "",
         };
         try {
             await terraformInit(root);
@@ -11376,8 +11377,9 @@ async function recursivePlan(root_dir) {
         }
         core.info(`Terraform init done for ${root}`);
         try {
-            await terraformPlan(root);
+            const out = await terraformPlan(root);
             core.info(`Terraform plan done for ${root}`);
+            payload.command_output = out;
         }
         catch (error) {
             if (error.code === 1) {
@@ -11388,6 +11390,7 @@ async function recursivePlan(root_dir) {
                 core.info(`Plan changed for ${root}`);
                 payload.change = true;
             }
+            payload.command_output = `Stdout: ${error.stdout}\nStderr: ${error.stderr}\n`;
         }
         try {
             await terraformCleanup(root);
@@ -11417,6 +11420,7 @@ async function terraformInit(dir_path) {
 async function terraformPlan(dir_path) {
     try {
         const { stdout, stderr } = await exec(`terraform -chdir=${dir_path} plan -no-color -detailed-exitcode`);
+        return stdout;
     }
     catch (error) {
         core.error(error.stdout);

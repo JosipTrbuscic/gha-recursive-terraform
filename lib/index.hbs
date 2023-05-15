@@ -22,6 +22,13 @@
             border-radius: 0.25rem;
             overflow: hidden;
             background-color: white;
+            min-height: 2rem;
+            display: flex;
+            align-items: center;
+        }
+
+        li>details {
+            margin: 1rem;
         }
 
         .error {
@@ -51,7 +58,12 @@
 
     <ul>
         {{#each moduleInfo}}
-        <li class="{{planResult this}}">{{dir_name}}</li>
+        <li class="{{planResult this}}">
+            <details>
+                <summary>{{dir_name}}</summary>
+                <p>{{command_output}}</p>
+            </details>
+        </li>
         {{/each}}
     </ul>
 </body>
