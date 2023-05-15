@@ -11422,17 +11422,30 @@ async function terraformInit(dir_path) {
         throw error;
     }
 }
+class CommandError extends Error {
+    status;
+    stdout;
+    stderr;
+    constructor(status, stdout, stderr) {
+        super(stderr);
+        this.status = status;
+        this.stdout = stdout;
+        this.stderr = stderr;
+    }
+}
 function terraformPlan(dir_path) {
-    try {
-        const stdout = (0,external_child_process_namespaceObject.execSync)(`terraform -chdir=${dir_path} plan -no-color -detailed-exitcode`).toString();
-        core.info(stdout);
-        return stdout;
+    const cmd = (0,external_child_process_namespaceObject.spawnSync)(`terraform`, [`-chdir=${dir_path}`, "plan", "-no-color", "-detailed-exitcode"]);
+    core.info(cmd.status.toString());
+    core.info(cmd.stdout.toString());
+    core.info(cmd.stderr.toString());
+    if (cmd.error !== undefined) {
+        core.error(cmd.stderr.toString());
+        throw cmd.error;
     }
-    catch (error) {
-        core.error(error.stdout);
-        core.error(error.stderr);
-        throw error;
+    else if (cmd.status !== 0) {
+        throw new CommandError(cmd.status, cmd.stdout.toString(), cmd.stderr.toString());
     }
+    return cmd.stdout.toString();
 }
 async function checkTerraformExists() {
     try {

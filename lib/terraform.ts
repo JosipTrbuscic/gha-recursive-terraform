@@ -3,7 +3,7 @@ import * as cp from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 const exec = util.promisify(cp.exec)
-import { execSync } from 'child_process';
+import { spawnSync } from 'child_process';
 import * as core from '@actions/core';
 import * as walk from "@root/walk";
 
@@ -87,16 +87,28 @@ async function terraformInit(dir_path: string) {
     }
 }
 
-function terraformPlan(dir_path: string): string {
-    try {
-        const stdout = execSync(`terraform -chdir=${dir_path} plan -no-color -detailed-exitcode`).toString()
-        core.info(stdout);
-        return stdout
-    } catch (error) {
-        core.error(error.stdout)
-        core.error(error.stderr)
-        throw error
+class CommandError extends Error {
+    constructor(public status: number, public stdout: string, public stderr: string) {
+        super(stderr)
     }
+}
+
+function terraformPlan(dir_path: string): string {
+    const cmd = spawnSync(`terraform`, [`-chdir=${dir_path}`, "plan", "-no-color", "-detailed-exitcode"]);
+    core.info(cmd.status.toString())
+    core.info(cmd.stdout.toString())
+    core.info(cmd.stderr.toString())
+    if (cmd.error !== undefined) {
+        core.error(cmd.stderr.toString());
+        throw cmd.error
+    } else if (cmd.status !== 0) {
+        throw new CommandError(
+            cmd.status,
+            cmd.stdout.toString(),
+            cmd.stderr.toString()
+        )
+    }
+    return cmd.stdout.toString();
 }
 
 export async function checkTerraformExists() {
