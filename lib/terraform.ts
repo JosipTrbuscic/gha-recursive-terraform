@@ -3,7 +3,6 @@ import * as cp from 'child_process';
 import * as fs from 'fs';
 import * as path from 'path';
 const exec = util.promisify(cp.exec)
-import { execSync } from 'child_process';
 import * as core from '@actions/core';
 import * as walk from "@root/walk";
 
@@ -43,7 +42,7 @@ export async function recursivePlan(root_dir: string): Promise<TerraformPlanInfo
         core.info(`Terraform init done for ${root}`)
 
         try {
-            const out = terraformPlan(root)
+            const out = await terraformPlan(root)
             core.info(`Terraform plan done for ${root}`)
             payload.command_output = out.split(/(\n|%0A)/).filter((v) => v.length > 0 && v !== "\n" && v !== "%0A")
         } catch (error) {
@@ -86,10 +85,11 @@ async function terraformInit(dir_path: string) {
     }
 }
 
-function terraformPlan(dir_path: string): string {
+async function terraformPlan(dir_path: string): Promise<string> {
     try {
-        const stdout = execSync(`terraform -chdir=${dir_path} plan -no-color -detailed-exitcode`).toString()
+        const { stdout, stderr } = await exec(`terraform -chdir=${dir_path} plan -no-color -detailed-exitcode`)
         core.info(stdout);
+        core.info(stderr);
         return stdout
     } catch (error) {
         core.error(error.stdout)
