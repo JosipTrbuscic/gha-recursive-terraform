@@ -5,6 +5,7 @@ import * as path from 'path';
 const exec = util.promisify(cp.exec)
 import * as core from '@actions/core';
 import * as walk from "@root/walk";
+import { chunk } from 'lodash';
 
 export interface TerraformPlanInfo {
     dir_name: string
@@ -22,16 +23,16 @@ export async function recursivePlan(root_dir: string): Promise<TerraformPlanInfo
     var executions: TerraformPlanExecution[] = [];
     const filterDirs = (entities: fs.Dirent[]) => {
         return entities
-            .filter((ent) => ent.isDirectory && !ent.name.includes(".terraform"));
+            .filter((ent) => ent.isDirectory() && !ent.name.includes(".terraform"));
     };
 
     const walkFunc = async (err, pathname: string, dirent: fs.Dirent) => {
+        if (!fs.existsSync(path.join(pathname, "backend.tf"))) {
+            return
+        }
         const execution = new TerraformPlanExecution(
             async () => {
                 const root = pathname;
-                if (!fs.existsSync(path.join(pathname, "backend.tf"))) {
-                    return
-                }
                 core.info(`In: ${root}`)
                 var payload: TerraformPlanInfo = {
                     dir_name: root.substring(root_dir.length).length > 0 ? root.substring(root_dir.length) : path.basename(root_dir),
@@ -81,11 +82,15 @@ export async function recursivePlan(root_dir: string): Promise<TerraformPlanInfo
     console.log(`Start walk in ${root_dir}`)
     await w(root_dir, walkFunc);
 
-    const proms = [];
-    for (const e of executions) {
-        proms.push(e.execution())
+    const batch_size = 5;
+    const batches = chunk(executions, batch_size);
+    for (const batch of batches) {
+        const proms = [];
+        for (const e of batch) {
+            proms.push(e.execution())
+        }
+        await Promise.allSettled(proms);
     }
-    await Promise.allSettled(proms);
 
     return data
 }
