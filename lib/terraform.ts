@@ -13,63 +13,79 @@ export interface TerraformPlanInfo {
     command_output: string[]
 }
 
+class TerraformPlanExecution {
+    constructor(public execution: () => Promise<any>) { }
+}
+
 export async function recursivePlan(root_dir: string): Promise<TerraformPlanInfo[]> {
-    var data: TerraformPlanInfo[] = []
+    var data: TerraformPlanInfo[] = [];
+    var executions: TerraformPlanExecution[] = [];
     const filterDirs = (entities: fs.Dirent[]) => {
         return entities
             .filter((ent) => ent.isDirectory && !ent.name.includes(".terraform"));
     };
 
     const walkFunc = async (err, pathname: string, dirent: fs.Dirent) => {
-        const root = pathname;
-        if (!fs.existsSync(path.join(pathname, "backend.tf"))) {
-            return
-        }
-        core.info(`In: ${root}`)
-        var payload: TerraformPlanInfo = {
-            dir_name: root.substring(root_dir.length).length > 0 ? root.substring(root_dir.length) : path.basename(root_dir),
-            error: false,
-            change: false,
-            command_output: [],
-        }
-        try {
-            await terraformInit(root)
-        } catch (e) {
-            payload.error = true
-            data.push(payload)
-            return
-        }
-        core.info(`Terraform init done for ${root}`)
+        const execution = new TerraformPlanExecution(
+            async () => {
+                const root = pathname;
+                if (!fs.existsSync(path.join(pathname, "backend.tf"))) {
+                    return
+                }
+                core.info(`In: ${root}`)
+                var payload: TerraformPlanInfo = {
+                    dir_name: root.substring(root_dir.length).length > 0 ? root.substring(root_dir.length) : path.basename(root_dir),
+                    error: false,
+                    change: false,
+                    command_output: [],
+                }
+                try {
+                    await terraformInit(root)
+                } catch (e) {
+                    payload.error = true
+                    data.push(payload)
+                    return
+                }
+                core.info(`Terraform init done for ${root}`)
 
-        try {
-            const out = await terraformPlan(root)
-            core.info(`Terraform plan done for ${root}`)
-            payload.command_output = out.split(/(\n|%0A)/).filter((v) => v.length > 0 && v !== "\n" && v !== "%0A")
-        } catch (error) {
-            if (error.code === 1) {
-                core.info(`Plan errored for ${root}`)
-                payload.error = true
-            } else if (error.code === 2) {
-                core.info(`Plan changed for ${root}`)
-                payload.change = true
+                try {
+                    const out = await terraformPlan(root)
+                    core.info(`Terraform plan done for ${root}`)
+                    payload.command_output = out.split(/(\n|%0A)/).filter((v) => v.length > 0 && v !== "\n" && v !== "%0A")
+                } catch (error) {
+                    if (error.code === 1) {
+                        core.info(`Plan errored for ${root}`)
+                        payload.error = true
+                    } else if (error.code === 2) {
+                        core.info(`Plan changed for ${root}`)
+                        payload.change = true
+                    }
+                    payload.command_output = `Stdout: ${error.stdout}\nStderr: ${error.stderr}\n`.split(/(\n|%0A)/).filter((v) => v.length > 0 && v !== "\n" && v !== "%0A")
+                }
+                console.log(payload);
+
+                try {
+                    await terraformCleanup(root)
+                } catch (error) {
+                    core.error("Unable to cleanup .terraform")
+                    throw error
+                }
+
+                data.push(payload)
             }
-            payload.command_output = `Stdout: ${error.stdout}\nStderr: ${error.stderr}\n`.split(/(\n|%0A)/).filter((v) => v.length > 0 && v !== "\n" && v !== "%0A")
-        }
-        console.log(payload);
-
-        try {
-            await terraformCleanup(root)
-        } catch (error) {
-            core.error("Unable to cleanup .terraform")
-            throw error
-        }
-
-        data.push(payload)
+        )
+        executions.push(execution);
     };
 
     const w = walk.create({ sort: filterDirs })
     console.log(`Start walk in ${root_dir}`)
     await w(root_dir, walkFunc);
+
+    const proms = [];
+    for (const e of executions) {
+        proms.push(e.execution())
+    }
+    await Promise.allSettled(proms);
 
     return data
 }
