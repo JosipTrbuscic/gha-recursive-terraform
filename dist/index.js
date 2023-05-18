@@ -28637,7 +28637,7 @@ async function recursivePlan(root_dir) {
     const w = walk.create({ sort: filterDirs });
     console.log(`Start walk in ${root_dir}`);
     await w(root_dir, walkFunc);
-    const batch_size = 5;
+    const batch_size = 10;
     const batches = (0,lodash.chunk)(executions, batch_size);
     for (const batch of batches) {
         const proms = [];
