@@ -28453,14 +28453,28 @@ __nccwpck_require__.r(__webpack_exports__);
 /* harmony import */ var _actions_core__WEBPACK_IMPORTED_MODULE_0__ = __nccwpck_require__(9219);
 /* harmony import */ var _actions_core__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__nccwpck_require__.n(_actions_core__WEBPACK_IMPORTED_MODULE_0__);
 /* harmony import */ var _lib_terraform__WEBPACK_IMPORTED_MODULE_1__ = __nccwpck_require__(6195);
-/* harmony import */ var _lib_report__WEBPACK_IMPORTED_MODULE_2__ = __nccwpck_require__(9573);
+/* harmony import */ var _lib_report__WEBPACK_IMPORTED_MODULE_2__ = __nccwpck_require__(8560);
+/* harmony import */ var fs_promises__WEBPACK_IMPORTED_MODULE_3__ = __nccwpck_require__(3292);
+/* harmony import */ var fs_promises__WEBPACK_IMPORTED_MODULE_3___default = /*#__PURE__*/__nccwpck_require__.n(fs_promises__WEBPACK_IMPORTED_MODULE_3__);
+
 
 
 
 const env_vars = [
     "INPUT_START_DIR",
     "INPUT_ENVIRONMENT",
+    "INPUT_BATCH_SIZE",
 ];
+async function validateEnvVars() {
+    const batch_size_string = process.env[env_vars[2]];
+    if (isNaN(parseInt(batch_size_string, 10))) {
+        throw new Error("Batch size mush be a valid integer");
+    }
+    const start_dir = await (0,fs_promises__WEBPACK_IMPORTED_MODULE_3__.stat)(process.env[env_vars[0]]);
+    if (!start_dir.isDirectory()) {
+        throw new Error("Start dir must be a valid directory");
+    }
+}
 for (const name of env_vars) {
     if (process.env[name] === undefined) {
         _actions_core__WEBPACK_IMPORTED_MODULE_0__.setFailed(`${name} is undefined`);
@@ -28468,6 +28482,7 @@ for (const name of env_vars) {
     }
 }
 try {
+    await validateEnvVars();
     _actions_core__WEBPACK_IMPORTED_MODULE_0__.info("Checking if terraform command exists");
     const terraformExists = await (0,_lib_terraform__WEBPACK_IMPORTED_MODULE_1__/* .checkTerraformExists */ .Au)();
     if (terraformExists) {
@@ -28477,7 +28492,7 @@ try {
         throw Error("Terraform command NOT found");
     }
     console.log("Running recursive plan");
-    const data = await (0,_lib_terraform__WEBPACK_IMPORTED_MODULE_1__/* .recursivePlan */ .Yz)(process.env.INPUT_START_DIR);
+    const data = await (0,_lib_terraform__WEBPACK_IMPORTED_MODULE_1__/* .recursivePlan */ .Yz)(process.env.INPUT_START_DIR, parseInt(process.env.INPUT_BATCH_SIZE));
     await (0,_lib_report__WEBPACK_IMPORTED_MODULE_2__/* .generateReport */ .O)(data);
 }
 catch (error) {
@@ -28489,27 +28504,23 @@ __webpack_async_result__();
 
 /***/ }),
 
-/***/ 9573:
+/***/ 8560:
 /***/ ((__unused_webpack_module, __webpack_exports__, __nccwpck_require__) => {
 
 "use strict";
-
-// EXPORTS
-__nccwpck_require__.d(__webpack_exports__, {
-  "O": () => (/* binding */ generateReport)
-});
-
-;// CONCATENATED MODULE: external "fs/promises"
-const promises_namespaceObject = require("fs/promises");
-// EXTERNAL MODULE: ./node_modules/handlebars/lib/index.js
-var lib = __nccwpck_require__(6495);
-// EXTERNAL MODULE: external "path"
-var external_path_ = __nccwpck_require__(1017);
-;// CONCATENATED MODULE: ./lib/report.ts
+/* harmony export */ __nccwpck_require__.d(__webpack_exports__, {
+/* harmony export */   "O": () => (/* binding */ generateReport)
+/* harmony export */ });
+/* harmony import */ var fs_promises__WEBPACK_IMPORTED_MODULE_0__ = __nccwpck_require__(3292);
+/* harmony import */ var fs_promises__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__nccwpck_require__.n(fs_promises__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var handlebars__WEBPACK_IMPORTED_MODULE_1__ = __nccwpck_require__(6495);
+/* harmony import */ var handlebars__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__nccwpck_require__.n(handlebars__WEBPACK_IMPORTED_MODULE_1__);
+/* harmony import */ var path__WEBPACK_IMPORTED_MODULE_2__ = __nccwpck_require__(1017);
+/* harmony import */ var path__WEBPACK_IMPORTED_MODULE_2___default = /*#__PURE__*/__nccwpck_require__.n(path__WEBPACK_IMPORTED_MODULE_2__);
 
 
 
-lib.registerHelper("planResult", function (directory, options) {
+handlebars__WEBPACK_IMPORTED_MODULE_1__.registerHelper("planResult", function (directory, options) {
     if (directory.change) {
         return "change";
     }
@@ -28520,16 +28531,16 @@ lib.registerHelper("planResult", function (directory, options) {
         return "nochange";
     }
 });
-lib.registerHelper("concatStdout", function (stdout, options) {
+handlebars__WEBPACK_IMPORTED_MODULE_1__.registerHelper("concatStdout", function (stdout, options) {
     return stdout.join("\n");
 });
 async function generateReport(data) {
-    const templateFile = await (0,promises_namespaceObject.readFile)(__nccwpck_require__.ab + "index.hbs", { encoding: "utf-8" });
-    const template = lib.compile(templateFile);
+    const templateFile = await (0,fs_promises__WEBPACK_IMPORTED_MODULE_0__.readFile)(__nccwpck_require__.ab + "index.hbs", { encoding: "utf-8" });
+    const template = handlebars__WEBPACK_IMPORTED_MODULE_1__.compile(templateFile);
     const env = process.env.INPUT_ENVIRONMENT;
     const res = template({ environment: env, moduleInfo: data });
     console.log("Writing terraform_plan_index.html");
-    await (0,promises_namespaceObject.writeFile)("terraform_plan_index.html", res, { encoding: "utf-8", flag: 'w' });
+    await (0,fs_promises__WEBPACK_IMPORTED_MODULE_0__.writeFile)("terraform_plan_index.html", res, { encoding: "utf-8", flag: 'w' });
 }
 
 
@@ -28571,7 +28582,7 @@ const exec = external_util_.promisify(external_child_process_namespaceObject.exe
 
 
 
-async function recursivePlan(root_dir) {
+async function recursivePlan(root_dir, batch_size) {
     var data = [];
     var executions = [];
     const filterDirs = (entities) => {
@@ -28631,7 +28642,6 @@ async function recursivePlan(root_dir) {
     const w = walk.create({ sort: filterDirs });
     core.info(`Start walk in ${root_dir}`);
     await w(root_dir, walkFunc);
-    const batch_size = 10;
     const batches = (0,lodash.chunk)(executions, batch_size);
     for (const batch of batches) {
         const proms = [];
@@ -28693,6 +28703,14 @@ module.exports = require("events");
 
 "use strict";
 module.exports = require("fs");
+
+/***/ }),
+
+/***/ 3292:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("fs/promises");
 
 /***/ }),
 

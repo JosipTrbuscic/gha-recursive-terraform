@@ -17,7 +17,7 @@ export interface TerraformPlanInfo {
 type TerraformPlanExecution = () => Promise<any>
 type Outputs = { stdout: string, stderr: string }
 
-export async function recursivePlan(root_dir: string): Promise<TerraformPlanInfo[]> {
+export async function recursivePlan(root_dir: string, batch_size: number): Promise<TerraformPlanInfo[]> {
     var data: TerraformPlanInfo[] = [];
     var executions: TerraformPlanExecution[] = [];
     const filterDirs = (entities: fs.Dirent[]) => {
@@ -81,7 +81,6 @@ export async function recursivePlan(root_dir: string): Promise<TerraformPlanInfo
     core.info(`Start walk in ${root_dir}`)
     await w(root_dir, walkFunc);
 
-    const batch_size = 10;
     const batches = chunk(executions, batch_size);
     for (const batch of batches) {
         const proms = [];
