@@ -28478,7 +28478,7 @@ async function validateEnvVars() {
 for (const name of env_vars) {
     if (process.env[name] === undefined) {
         _actions_core__WEBPACK_IMPORTED_MODULE_0__.setFailed(`${name} is undefined`);
-        throw new Error("");
+        throw new Error("Undefined required env variable");
     }
 }
 try {
@@ -28644,10 +28644,7 @@ async function recursivePlan(root_dir, batch_size) {
     await w(root_dir, walkFunc);
     const batches = (0,lodash.chunk)(executions, batch_size);
     for (const batch of batches) {
-        const proms = [];
-        for (const e of batch) {
-            proms.push(e());
-        }
+        const proms = batch.map((fn) => fn());
         await Promise.allSettled(proms);
     }
     return data;

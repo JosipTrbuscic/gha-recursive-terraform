@@ -83,10 +83,7 @@ export async function recursivePlan(root_dir: string, batch_size: number): Promi
 
     const batches = chunk(executions, batch_size);
     for (const batch of batches) {
-        const proms = [];
-        for (const e of batch) {
-            proms.push(e())
-        }
+        const proms = batch.map((fn) => fn())
         await Promise.allSettled(proms);
     }
 
