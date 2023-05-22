@@ -8,6 +8,10 @@ inputs:
   environment:
     description: 'Infra environemnt'
     required: true
+  batch_size:
+    description: 'Number of concurrent terraform processes'
+    required: true
+    default: 7
 runs:
   using: 'node16'
   main: 'dist/index.js'
