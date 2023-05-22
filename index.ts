@@ -1,6 +1,6 @@
 import * as core from '@actions/core';
 import { checkTerraformExists, recursivePlan } from './lib/terraform';
-import { generateReport } from './lib/report';
+import { generateAsciiTable, generateReport } from './lib/report';
 import { stat } from 'fs/promises';
 
 const env_vars = [
@@ -42,6 +42,7 @@ try {
   console.log("Running recursive plan")
   const data = await recursivePlan(process.env.INPUT_START_DIR, parseInt(process.env.INPUT_BATCH_SIZE))
   await generateReport(data);
+  console.log(generateAsciiTable(data));
 } catch (error) {
   core.setFailed(error.message);
 }
